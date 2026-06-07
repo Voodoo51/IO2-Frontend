@@ -24,6 +24,7 @@ export function TeacherLayout({ user }: { user: User }) {
           <NavLink to="/teacher/grades">Grades</NavLink>
           <NavLink to="/teacher/attendance">Attendance</NavLink>
           <NavLink to="/teacher/lesson-plan">Lesson Plan</NavLink>
+          <NavLink to="/teacher/statistics">Statistics</NavLink>
         </nav>
 
         <Outlet />

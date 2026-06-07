@@ -12,6 +12,8 @@ import { TeacherGradesView } from './views/TeacherGradesView';
 import { TeacherAttendanceView } from './views/TeacherAttendanceView';
 import { GradesView } from './views/GradesView';
 import type { Lesson, StudentAttendance, StudentGrades, TeacherAttendanceEntry, TeacherGradeEntry, User } from './types';
+import { TeacherStatisticsView } from './views/TeacherStatisticsView';
+import { TeacherStatisticsDashboard } from './views/TeacherStatisticsDashboard';
 
 const teacherUser = {
   role: 'teacher',
@@ -221,6 +223,13 @@ function App() {
               }
             />
 
+            <Route
+              path="/teacher/statistics"
+              element={ 
+                  <TeacherStatisticsDashboard user={user} />
+              }
+            />
+            
             <Route path="*" element={<Navigate to="/" replace />} />
             </> )}
           </Routes>

@@ -32,6 +32,14 @@ export function TeacherDashboard({ user }: {user: User}) {
           description="View teaching schedule"
           onClick={() => navigate('/teacher/lesson-plan')}
         />
+
+        <DashboardCard
+          title="Statistics"
+          description="Class and student analytics"
+          onClick={() => navigate('/teacher/statistics')}
+        />
+
+
       </div>
     </section>
   );
