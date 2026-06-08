@@ -10,47 +10,92 @@ export function TeacherGradesView({ user }: {user: User}) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const hasFetchedRef = useRef(false);
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [form, setForm] = useState({
+      value: "",
+      weight: "",
+      text: "",
+      studentId: "",
+      teacherId: user.id,
+      subjectId: "",
+    });
+
+async function fetchGrades() {
+  setLoading(true);
+  try {
+    const res = await fetch("http://localhost:8080/user/teacherGrades", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id }),
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch grades");
+
+    const data: TeacherGradeEntries[] = await res.json();
+    setGradeEntries(data);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Unknown error");
+  } finally {
+    setLoading(false);
+  }
+}
+
     useEffect(() => {
-        const el = containerRef.current;
-        if (!el) return;
+      const el = containerRef.current;
+      if (!el) return;
 
-        const observer = new IntersectionObserver(
-          async ([entry]) => {
-            if (!entry.isIntersecting) return;
-            if (hasFetchedRef.current) return;
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && !hasFetchedRef.current) {
+          hasFetchedRef.current = true;
+          fetchGrades();
+        }
+      });
 
-            hasFetchedRef.current = true;
-            setLoading(true);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }, [user.id]);
+    function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+      const { name, value } = e.target;
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
 
-            try {
-              const res = await fetch("http://localhost:8080/user/teacherGrades", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ id: user.id }),
-              });
+    async function handleSubmit() {
+      try {
+        const payload = {
+          value: Number(form.value),
+          weight: Number(form.weight),
+          text: form.text,
+          studentId: Number(form.studentId),
+          teacherId: Number(form.teacherId),
+          subjectId: Number(form.subjectId),
+        };
 
-              if (!res.ok) {
-                throw new Error("Failed to fetch grades");
-              }
-
-              const data: TeacherGradeEntries[] = await res.json();
-              console.log(data);
-              setGradeEntries(data);
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Unknown error");
-            } finally {
-              setLoading(false);
-            }
+        const res = await fetch("http://localhost:8080/user/grade", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          { threshold: 0.1 }
-        );
+          body: JSON.stringify(payload),
+        });
 
-        observer.observe(el);
+        if (!res.ok) throw new Error("Failed to add grade");
 
-        return () => observer.disconnect();
-      }, [user.id]);
+        const newData = await res.json();
+
+await fetchGrades();
+        // optionally refresh list or append
+        console.log(newData);
+
+        setIsModalOpen(false);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
 
 return (
     <div className="bg-white rounded-3xl shadow-lg p-6">
@@ -60,7 +105,10 @@ return (
           <p className="text-slate-500">Add or remove student grades</p>
         </div>
 
-        <button className="rounded-2xl bg-blue-600 text-white px-5 py-3 font-medium">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="rounded-2xl bg-blue-600 text-white px-5 py-3 font-medium"
+        >
           + Add Grade
         </button>
       </div>
@@ -104,6 +152,68 @@ return (
         ))}
       </div>
 
+    {isModalOpen && (
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-6 w-[420px] space-y-4">
+          <h2 className="text-xl font-bold">Add Grade</h2>
+
+          <input
+            name="value"
+            placeholder="Value"
+            type="number"
+            onChange={handleChange}
+            className="w-full border p-2 rounded-xl"
+          />
+
+          <input
+            name="weight"
+            placeholder="Weight"
+            type="number"
+            onChange={handleChange}
+            className="w-full border p-2 rounded-xl"
+          />
+
+          <textarea
+            name="text"
+            placeholder="Comment"
+            onChange={handleChange}
+            className="w-full border p-2 rounded-xl"
+          />
+
+          <input
+            name="studentId"
+            placeholder="Student ID"
+            type="number"
+            onChange={handleChange}
+            className="w-full border p-2 rounded-xl"
+          />
+
+          <input
+            name="subjectId"
+            placeholder="Subject ID"
+            type="number"
+            onChange={handleChange}
+            className="w-full border p-2 rounded-xl"
+          />
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 rounded-xl border"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleSubmit}
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     {/*
       <div className="space-y-4">
         {gradeEntries.map((entry, index) => (
