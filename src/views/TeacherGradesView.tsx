@@ -195,7 +195,7 @@ return (
                   className="px-5 py-4 flex items-center justify-between"
                 >
                   <div>
-                    <p className="font-medium">Teacher: {entry.studentName + " " + entry.studentSurname}</p>
+                    <p className="font-medium">Student: {entry.studentName + " " + entry.studentSurname}</p>
                     <p className="text-sm text-slate-500">
                       Added on {new Date(entry.date).toLocaleDateString()}
                     </p>
