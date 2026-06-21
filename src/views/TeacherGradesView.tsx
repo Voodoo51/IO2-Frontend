@@ -7,6 +7,9 @@ export function TeacherGradesView({ user }: {user: User}) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [editingEntry, setEditingEntry] = useState<any | null>(null);
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const hasFetchedRef = useRef(false);
 
@@ -96,6 +99,62 @@ await fetchGrades();
       }
     }
 
+async function handleDelete(id: number) {
+  try {
+    const res = await fetch(`http://localhost:8080/user/grade/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("Failed to delete grade");
+
+    setDeleteId(null);
+    await fetchGrades();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleUpdate() {
+  if (!editingEntry) return;
+
+  try {
+    const payload = {
+      value: Number(editingEntry.value),
+      weight: Number(editingEntry.weight),
+      text: editingEntry.text,
+    };
+
+/*
+    if (Number(payload.value) < 0 || Number(payload.value) > 6) {
+      alert("Ocena musi być w zakresie 0-6");
+      return;
+    }
+
+    if (Number(payload.weight) < 0) {
+      alert("Waga nie może być ujemna");
+      return;
+    }
+*/
+    const res = await fetch(
+      `http://localhost:8080/user/grade/${editingEntry.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to update grade");
+
+    setEditingEntry(null);
+    await fetchGrades();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 
 return (
     <div className="bg-white rounded-3xl shadow-lg p-6">
@@ -142,9 +201,28 @@ return (
                     </p>
                   </div>
 
-                  <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center font-bold text-lg">
-                    {entry.value}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center font-bold text-lg">
+                      {entry.value}
+                    </div>
+
+                    <button
+                      onClick={() => setEditingEntry(entry)}
+                      className="px-3 py-1 rounded-lg border text-blue-600 hover:bg-blue-50"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => setDeleteId(entry.id)}
+                      className="px-3 py-1 rounded-lg border text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
                   </div>
+
+
+
                 </div>
               ))}
             </div>
@@ -214,6 +292,88 @@ return (
         </div>
       </div>
     )}
+{deleteId !== null && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-2xl w-[350px] space-y-4">
+      <h2 className="text-lg font-bold">Confirm deletion</h2>
+      <p>Are you sure you want to delete this grade?</p>
+
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={() => setDeleteId(null)}
+          className="px-4 py-2 border rounded-xl"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => handleDelete(deleteId)}
+          className="px-4 py-2 bg-red-600 text-white rounded-xl"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{editingEntry && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-2xl w-[420px] space-y-4">
+      <h2 className="text-xl font-bold">Edit Grade</h2>
+
+      <h2 className="text-sm font-medium text-slate-600">Ocena</h2>
+      <input
+        type="number"
+        min="0"
+        max="6"
+        value={editingEntry.value}
+        onChange={(e) =>
+          setEditingEntry({ ...editingEntry, value: e.target.value })
+        }
+        className="w-full border p-2 rounded-xl"
+      />
+
+      <h2 className="text-sm font-medium text-slate-600">Waga</h2>
+      <input
+        type="number"
+        min="0"
+        max ="30"
+        step="1"
+        value={editingEntry.weight || ""}
+        onChange={(e) =>
+          setEditingEntry({ ...editingEntry, weight: e.target.value })
+        }
+        className="w-full border p-2 rounded-xl"
+      />
+
+      <h2 className="text-sm font-medium text-slate-600">Opis</h2>
+      <textarea
+        value={editingEntry.text || ""}
+        onChange={(e) =>
+          setEditingEntry({ ...editingEntry, text: e.target.value })
+        }
+        className="w-full border p-2 rounded-xl"
+      />
+
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={() => setEditingEntry(null)}
+          className="px-4 py-2 border rounded-xl"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleUpdate}
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     {/*
       <div className="space-y-4">
         {gradeEntries.map((entry, index) => (
