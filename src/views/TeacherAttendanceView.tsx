@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import type { TeacherAttendanceEntry } from '../types';
 
 export function TeacherAttendanceView({attendanceEntries}: { attendanceEntries: TeacherAttendanceEntry[] }) {
+
   return (
     <div className="bg-white rounded-3xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
