@@ -10,6 +10,8 @@ export function TeacherGradesView({ user }: {user: User}) {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [editingEntry, setEditingEntry] = useState<any | null>(null);
 
+    const [popup, setPopup] = useState<string | null>(null);
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const hasFetchedRef = useRef(false);
 
@@ -68,6 +70,11 @@ async function fetchGrades() {
 
     async function handleSubmit() {
       try {
+          if (!form.value?.trim() || !form.weight?.trim()) {
+            setPopup("Ocena i waga nie mogą być puste");
+            return;
+          }
+
         const payload = {
           value: Number(form.value),
           weight: Number(form.weight),
@@ -76,6 +83,22 @@ async function fetchGrades() {
           teacherId: Number(form.teacherId),
           subjectId: Number(form.subjectId),
         };
+
+        if (Number(payload.value) < 0 || Number(payload.value) > 10) {
+          setPopup("Ocena musi być w zakresie 0–10");
+          return;
+        }
+
+        if (Number(payload.weight) < 0 ) {
+          setPopup("Waga nie może być ujemna");
+          return;
+        }
+
+        if (Number(payload.weight) > 30) {
+          setPopup("Waga nie może być większa od 30");
+          return;
+        }
+
 
         const res = await fetch("http://localhost:8080/user/grade", {
           method: "POST",
@@ -116,7 +139,15 @@ async function handleDelete(id: number) {
 
 async function handleUpdate() {
   if (!editingEntry) return;
+console.log("EDIT ENTRY:", editingEntry);
 
+  const valueRaw = editingEntry.value?.toString().trim();
+  const weightRaw = editingEntry.weight?.toString().trim();
+
+  if (!valueRaw || !weightRaw) {
+    setPopup("Ocena i waga nie mogą być puste");
+    return;
+  }
   try {
     const payload = {
       gradeValue: Number(editingEntry.value),
@@ -124,17 +155,22 @@ async function handleUpdate() {
         gradeText: editingEntry.text,
     };
 
-/*
-    if (Number(payload.value) < 0 || Number(payload.value) > 6) {
-      alert("Ocena musi być w zakresie 0-6");
+
+    if (Number(payload.gradeValue) < 0 || Number(payload.gradeValue) > 10) {
+      setPopup("Ocena musi być w zakresie 0–10");
       return;
     }
 
-    if (Number(payload.weight) < 0) {
-      alert("Waga nie może być ujemna");
+    if (Number(payload.gradeWeight) < 0 ) {
+      setPopup("Waga nie może być ujemna");
       return;
     }
-*/
+
+    if (Number(payload.gradeWeight) > 30) {
+      setPopup("Waga nie może być większa od 30");
+      return;
+    }
+
     const res = await fetch(
       `http://localhost:8080/user/grade/${editingEntry.id}`,
       {
@@ -237,6 +273,9 @@ return (
 
           <input
             name="value"
+            min="0"
+            max="10"
+            required
             placeholder="Value"
             type="number"
             onChange={handleChange}
@@ -245,6 +284,9 @@ return (
 
           <input
             name="weight"
+            min="0"
+            max="30"
+            required
             placeholder="Weight"
             type="number"
             onChange={handleChange}
@@ -326,10 +368,10 @@ return (
       <input
         type="number"
         min="0"
-        max="6"
-        value={editingEntry.value}
+        max="10"
+        value={editingEntry.value ?? ""}
         onChange={(e) =>
-          setEditingEntry({ ...editingEntry, value: e.target.value })
+          setEditingEntry({ ...editingEntry, value: String(e.target.value) })
         }
         className="w-full border p-2 rounded-xl"
       />
@@ -340,9 +382,9 @@ return (
         min="0"
         max ="30"
         step="1"
-        value={editingEntry.weight || ""}
+        value={editingEntry.weight ?? ""}
         onChange={(e) =>
-          setEditingEntry({ ...editingEntry, weight: e.target.value })
+          setEditingEntry({ ...editingEntry, weight: String(e.target.value) })
         }
         className="w-full border p-2 rounded-xl"
       />
@@ -371,6 +413,22 @@ return (
           Save
         </button>
       </div>
+    </div>
+  </div>
+)}
+{popup && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl p-6 w-[320px] space-y-4 text-center">
+      <h2 className="text-lg font-semibold text-red-600">Błąd</h2>
+
+      <p className="text-slate-700">{popup}</p>
+
+      <button
+        onClick={() => setPopup(null)}
+        className="px-4 py-2 rounded-xl bg-blue-600 text-white w-full"
+      >
+        OK
+      </button>
     </div>
   </div>
 )}
