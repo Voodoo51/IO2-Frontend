@@ -119,9 +119,9 @@ async function handleUpdate() {
 
   try {
     const payload = {
-      value: Number(editingEntry.value),
-      weight: Number(editingEntry.weight),
-      text: editingEntry.text,
+      gradeValue: Number(editingEntry.value),
+        gradeWeight: Number(editingEntry.weight),
+        gradeText: editingEntry.text,
     };
 
 /*
